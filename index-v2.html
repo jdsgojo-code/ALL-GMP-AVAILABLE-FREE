@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPO Market Intelligence</title>
+    <style>
+        /* Core Theme Variables */
+        :root {
+            --bg-base: #0b0c10;
+            --bg-surface: #15161a;
+            --bg-surface-hover: #1e1f26;
+            --text-main: #ffffff;
+            --text-muted: #8b9298;
+            --border-color: #2a2d35;
+            
+            --accent-green: #00E676; 
+            
+            --status-open: #00E676;
+            --status-upcoming: #3b82f6;
+            --status-closed: #6b7280;
+
+            --rating-bad: #ff4444;    
+            --rating-ok: #ffbb33;     
+            --rating-good: #00E676;   
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Main Content */
+        .main-content { flex-grow: 1; padding: 40px; overflow-y: auto; }
+
+        /* Header Area */
+        .top-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        .title-area h1 { margin: 0; font-size: 32px; letter-spacing: -0.5px; }
+        .title-area p { margin: 5px 0 0 0; color: var(--text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+        .header-stats { display: flex; align-items: center; gap: 20px; }
+        .sentiment { text-align: right; font-size: 12px; color: var(--text-muted); text-transform: uppercase; }
+        .sentiment span { display: block; color: var(--accent-green); font-size: 16px; font-weight: bold; margin-top: 2px; }
+
+        .nifty-box { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; font-family: monospace; font-size: 14px; letter-spacing: 1px; }
+
+        /* KPI Cards - Changed to 2 columns */
+        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 40px; }
+        .kpi-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; }
+        .kpi-card h3 { margin: 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-value { font-size: 42px; font-weight: bold; margin: 10px 0; }
+        .kpi-value.green { color: var(--accent-green); }
+        .kpi-subtext { margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+
+        /* Tracker Table */
+        .tracker-container { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; }
+        .tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .tracker-title-group { display: flex; align-items: center; gap: 20px; }
+        .tracker-header h2 { margin: 0; font-size: 20px; }
+
+        .rating-legend { display: flex; gap: 15px; font-size: 11px; color: var(--text-muted); font-weight: 700; background: rgba(0,0,0,0.2); padding: 6px 14px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-color { width: 10px; height: 10px; border-radius: 2px; }
+
+        .filters { background: #0b0c10; border-radius: 20px; padding: 4px; display: flex; border: 1px solid var(--border-color); }
+        .filter-btn { background: transparent; border: none; color: var(--text-muted); padding: 6px 16px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .filter-btn.active { background: #2a2d35; color: var(--text-main); }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0 2px; }
+        th { text-align: left; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 15px 10px; border-bottom: 1px solid var(--border-color); }
+        td { padding: 16px 10px; background-color: rgba(255, 255, 255, 0.02); font-size: 14px; font-weight: 500; transition: background-color 0.2s; }
+        tr:hover td { background-color: rgba(255, 255, 255, 0.06); }
+
+        td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+        td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+
+        .company-name { font-weight: 700; font-size: 16px; }
+        .segment-tag { display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase;}
+        .gmp-green { color: var(--accent-green); font-weight: 700; }
+        .premium-pill { background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+
+        .rating-pill { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .rating-bad { background: rgba(255, 68, 68, 0.1); color: var(--rating-bad); }
+        .rating-ok { background: rgba(255, 187, 51, 0.1); color: var(--rating-ok); }
+        .rating-good { background: rgba(0, 230, 118, 0.1); color: var(--rating-good); }
+
+        .status-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .dot { width: 6px; height: 6px; border-radius: 50%; }
+        .dot-open { background-color: var(--status-open); box-shadow: 0 0 8px var(--status-open); }
+        .dot-upcoming { background-color: var(--status-upcoming); }
+        .dot-closed { background-color: var(--status-closed); }
+
+        /* Row Flags based on Rating */
+        tr.rating-row-bad td:first-child { box-shadow: inset 4px 0 0 0 var(--rating-bad); padding-left: 16px; }
+        tr.rating-row-ok td:first-child { box-shadow: inset 4px 0 0 0 var(--rating-ok); padding-left: 16px; }
+        tr.rating-row-good td:first-child { box-shadow: inset 4px 0 0 0 var(--rating-good); padding-left: 16px; }
+        tr.rating-row-neutral td:first-child { box-shadow: inset 4px 0 0 0 #ffffff; padding-left: 16px; }
+        th:first-child { padding-left: 20px; } /* Align header with the shifted text */
+
+    </style>
+</head>
+<body>
+
+    <div class="main-content">
+        <div class="top-header">
+            <div class="title-area">
+                <h1>IPO Grey Market Premium</h1>
+                <p>Market Intelligence Dashboard • <span id="current-date"></span></p>
+            </div>
+            <div class="header-stats">
+                <div class="sentiment">
+                    Market Sentiment
+                    <span>Strongly Bullish</span>
+                </div>
+                <div class="nifty-box" id="nifty-display">NIFTY: LOADING...</div>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <h3>Active IPOs</h3>
+                <div class="kpi-value" id="kpi-active-count">0</div>
+                <p class="kpi-subtext" id="kpi-active-subtext">Calculating segments...</p>
+            </div>
+            <div class="kpi-card">
+                <h3>Highest GMP</h3>
+                <div class="kpi-value green" id="kpi-high-gmp">0.0%</div>
+                <p class="kpi-subtext" id="kpi-high-subtext">Waiting for data...</p>
+            </div>
+        </div>
+
+        <div class="tracker-container">
+            <div class="tracker-header">
+                <div class="tracker-title-group">
+                    <h2>Premium Tracker</h2>
+                    <div class="rating-legend">
+                        <div class="legend-item"><div class="legend-color" style="background: #ffffff;"></div> INACTIVE</div>
+                        <div class="legend-item"><div class="legend-color" style="background: var(--rating-bad);"></div> BAD</div>
+                        <div class="legend-item"><div class="legend-color" style="background: var(--rating-ok);"></div> OK</div>
+                        <div class="legend-item"><div class="legend-color" style="background: var(--rating-good);"></div> GOOD</div>
+                    </div>
+                </div>
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="ALL">ALL</button>
+                    <button class="filter-btn" data-filter="MAINBOARD">MAINBOARD</button>
+                    <button class="filter-btn" data-filter="SME">SME</button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Company Name</th>
+                        <th>Price Band</th>
+                        <th>GMP (₹)</th>
+                        <th>Premium %</th>
+                        <th>Rating</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <tr><td colspan="6" style="text-align: center; color: #888;">Fetching live market data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Your actual published CSV link
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR7-AQYt-rJZHRd1pguw2ugVQxhQ-0l49x5M7-M_EWeWd7AEeoZmK5IFcNQ6q9Q7ujwlgKCXxPr_m-G/pub?gid=529537165&single=true&output=csv";
+
+        const options = { month: 'short', day: 'numeric', year: 'numeric' };
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', options).toUpperCase();
+
+        // Global array to hold our structured data so we can filter it easily
+        let allIpoData = [];
+
+        async function initDashboard() {
+            try {
+                const response = await fetch(csvUrl);
+                const textData = await response.text();
+                
+                const rows = textData.split('\n').map(row => row.split(','));
+                
+                const niftyPrice = rows[1][8];
+                if (niftyPrice) {
+                    document.getElementById('nifty-display').innerText = `NIFTY: ${parseFloat(niftyPrice).toLocaleString('en-IN')}`;
+                }
+
+                let activeCount = 0;
+                let mainboardCount = 0;
+                let smeCount = 0;
+                let highestGmpVal = 0;
+                let highestGmpName = "";
+
+                // Reset the global array
+                allIpoData = [];
+
+                // Formats numbers to Indian comma system while keeping text/symbols intact
+                const formatIndian = (str) => {
+                    if (!str) return "";
+                    return str.replace(/\d+/g, (match) => {
+                        return Number(match).toLocaleString('en-IN');
+                    });
+                };
+
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row[0] || row[0].trim() === "") break;
+
+                    const company = row[0].trim();
+                    const type = row[1] ? row[1].trim() : "";
+                    const price = row[2] ? formatIndian(row[2].trim()) : "";
+                    const gmpRupee = row[3] ? row[3].trim() : "";
+                    const cleanPercent = row[6] ? row[6].trim() : "0%"; 
+                    const status = row[5] ? row[5].trim().toUpperCase() : "CHECK";
+                    const rating = row[7] ? row[7].trim().toUpperCase() : "BAD";
+
+                    if (status === "OPEN" || status === "UPCOMING") {
+                        activeCount++;
+                        if (type.toUpperCase().includes("MAINBOARD")) mainboardCount++;
+                        if (type.toUpperCase().includes("SME")) smeCount++;
+                        
+                        const numPercent = parseFloat(cleanPercent.replace('%', ''));
+                        if (!isNaN(numPercent)) {
+                            if (numPercent > highestGmpVal) {
+                                highestGmpVal = numPercent;
+                                highestGmpName = company;
+                            }
+                        }
+                    }
+
+                    let dotClass = "dot-closed";
+                    if (status === "OPEN") dotClass = "dot-open";
+                    if (status === "UPCOMING") dotClass = "dot-upcoming";
+
+                    let ratingClass = "rating-bad";
+                    if (rating === "OK") ratingClass = "rating-ok";
+                    if (rating === "GOOD") ratingClass = "rating-good";
+
+                    let gmpDisplay = gmpRupee;
+                    if(parseFloat(gmpRupee) > 0) {
+                        gmpDisplay = `+${formatIndian(gmpRupee)}`;
+                    } else if (gmpRupee !== "") {
+                        gmpDisplay = formatIndian(gmpRupee);
+                    }
+                    
+                    let isGreen = parseFloat(gmpRupee) > 0 ? 'gmp-green' : '';
+
+                    // Push the structured data into our global array
+                    allIpoData.push({
+                        company, type, price, gmpDisplay, cleanPercent, rating, status, 
+                        dotClass, ratingClass, isGreen
+                    });
+                }
+
+                // Initial render of the table showing all data
+                renderTable("ALL");
+
+                // Update KPI Cards
+                document.getElementById('kpi-active-count').innerText = activeCount;
+                document.getElementById('kpi-active-subtext').innerText = `${mainboardCount} MAINBOARD, ${smeCount} SME SEGMENT`;
+                document.getElementById('kpi-high-gmp').innerText = `+${highestGmpVal.toFixed(1)}%`;
+                document.getElementById('kpi-high-subtext').innerText = `${highestGmpName.substring(0, 15)}... LEADS PREMIUM`;
+
+            } catch (error) {
+                console.error("Data error:", error);
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="6">Error loading data. Check console for details.</td></tr>`;
+            }
+        }
+
+        // Function to rebuild the table HTML based on the active filter
+        function renderTable(filterType) {
+            let tableHtml = "";
+            let matchCount = 0;
+
+            allIpoData.forEach(item => {
+                // If the filter is ALL, or if the type matches MAINBOARD or SME
+                if (filterType === "ALL" || item.type.toUpperCase().includes(filterType)) {
+                    matchCount++;
+
+                    // Default to neutral/white flag and hidden rating for non-open IPOs
+                    let rowFlagClass = "rating-row-neutral";
+                    let ratingDisplay = `<span style="color: #444;">-</span>`;
+
+                    // Only apply colors and show rating if the IPO is OPEN
+                    if (item.status === "OPEN") {
+                        rowFlagClass = "rating-row-bad";
+                        if (item.rating === "OK") rowFlagClass = "rating-row-ok";
+                        if (item.rating === "GOOD") rowFlagClass = "rating-row-good";
+                        
+                        ratingDisplay = `<span class="rating-pill ${item.ratingClass}">${item.rating}</span>`;
+                    }
+
+                    tableHtml += `
+                        <tr class="${rowFlagClass}">
+                            <td>
+                                <span class="company-name">${item.company}</span>
+                                <span class="segment-tag">${item.type} SEGMENT</span>
+                            </td>
+                            <td>${item.price}</td>
+                            <td class="${item.isGreen}">${item.gmpDisplay}</td>
+                            <td><span class="premium-pill">${item.cleanPercent}</span></td>
+                            <td>${ratingDisplay}</td>
+                            <td>
+                                <div class="status-indicator">
+                                    <div class="dot ${item.dotClass}"></div>
+                                    ${item.status}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (matchCount === 0) {
+                tableHtml = `<tr><td colspan="6" style="text-align: center; color: #888; padding: 30px;">No active ${filterType} IPOs found.</td></tr>`;
+            }
+
+            document.getElementById('table-body').innerHTML = tableHtml;
+        }
+
+        // Setup click events for the filter buttons
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Remove 'active' class from all buttons
+                filterButtons.forEach(b => b.classList.remove('active'));
+                
+                // Add 'active' class to the button that was just clicked
+                e.target.classList.add('active');
+                
+                // Get the filter type from the data attribute and run the render function
+                const filterType = e.target.getAttribute('data-filter');
+                renderTable(filterType);
+            });
+        });
+
+        // Run the dashboard initialization
+        initDashboard();
+    </script>
+</body>
+</html>
